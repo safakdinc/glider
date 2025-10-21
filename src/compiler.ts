@@ -106,8 +106,8 @@ async function compile(overrides?: Partial<import("@/types.js").GliderConfig>) {
     );
 
     const relativeImportPath = relativePath
-      ? `./translations/${relativePath}/messages`
-      : "./translations/messages";
+      ? `./messages/${relativePath}/messages`
+      : "./messages/messages";
 
     allExports.push({
       path: relativePath || "(root)",

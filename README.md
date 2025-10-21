@@ -1,4 +1,4 @@
-# Glider i18n Compiler
+# Hot-Forklift i18n Compiler
 
 **Personalized paraglide-js alternative**
 
@@ -17,19 +17,19 @@
 ## Installation
 
 ```bash
-npm install --save-dev glider tsx
+npm install --save-dev hot-forklift tsx
 ```
 
 or with yarn:
 
 ```bash
-yarn add -D glider tsx
+yarn add -D hot-forklift tsx
 ```
 
 or with pnpm:
 
 ```bash
-pnpm add -D glider tsx
+pnpm add -D hot-forklift tsx
 ```
 
 ## Usage
@@ -68,16 +68,16 @@ Create JSON files in a `messages` directory (or any directory you prefer):
 
 ### 2. Create configuration file
 
-Create a `glider.config.ts` file in your project root:
+Create a `hot-forklift.config.ts` file in your project root:
 
 ```typescript
-import type { GliderConfig } from "glider";
+import type { HotForkliftConfig } from "hot-forklift";
 
-const config: GliderConfig = {
+const config: HotForkliftConfig = {
   locales: ["en", "es"],
   defaultLocale: "en",
   // messagesDir: "messages", // default
-  // outputDir: "src/glider", // default
+  // outputDir: "src/hot-forklift", // default
   // validateTranslations: true, // default
   // generateNamespaces: true, // default
 };
@@ -90,7 +90,7 @@ export default config;
 - `locales` (required) - Array of supported locale codes
 - `defaultLocale` (required) - Default locale for your application
 - `messagesDir` (optional) - Directory containing translation JSON files (default: `"messages"`)
-- `outputDir` (optional) - Output directory for compiled files (default: `"src/glider"`)
+- `outputDir` (optional) - Output directory for compiled files (default: `"src/hot-forklift"`)
 - `validateTranslations` (optional) - Check for missing translations (default: `true`)
 - `generateNamespaces` (optional) - Generate namespace objects (default: `true`)
 
@@ -99,33 +99,33 @@ export default config;
 Run the compiler to generate TypeScript functions:
 
 ```bash
-npx glider compile
+npx hot-forklift compile
 ```
 
 or with yarn:
 
 ```bash
-yarn glider compile
+yarn hot-forklift compile
 ```
 
 This generates the following structure:
 
 ```
-src/glider/
+src/hot-forklift/
 ├── _runtime.ts          # Runtime utilities (setLocale, getLocale)
 ├── _index.ts            # Re-exports all translations
-└── translations/
+└── messages/
     └── messages.ts      # Generated translation functions
 ```
 
 ## CLI Commands
 
-### `glider compile`
+### `hot-forklift compile`
 
 Compile translations from JSON to TypeScript.
 
 ```bash
-glider compile [options]
+hot-forklift compile [options]
 ```
 
 **Options:**
@@ -140,24 +140,24 @@ glider compile [options]
 
 ```bash
 # Compile with default config
-glider compile
+hot-forklift compile
 
 # Override input/output directories
-glider compile -i ./i18n -o ./src/translations
+hot-forklift compile -i ./i18n -o ./src/translations
 
 # Compile only specific locales
-glider compile -l en,es,fr
+hot-forklift compile -l en,es,fr
 
 # Skip validation
-glider compile --no-validate
+hot-forklift compile --no-validate
 ```
 
-### `glider init`
+### `hot-forklift init`
 
-Initialize a new Glider configuration file.
+Initialize a new Hot Forklift configuration file.
 
 ```bash
-glider init [options]
+hot-forklift init [options]
 ```
 
 **Options:**
@@ -167,27 +167,27 @@ glider init [options]
 **Example:**
 
 ```bash
-glider init
+hot-forklift init
 ```
 
-Creates a `glider.config.ts` file with default settings.
+Creates a `hot-forklift.config.ts` file with default settings.
 
-### `glider info`
+### `hot-forklift info`
 
 Display current configuration.
 
 ```bash
-glider info
+hot-forklift info
 ```
 
-Shows your current Glider configuration including locales, directories, and compiler options.
+Shows your current Hot Forklift configuration including locales, directories, and compiler options.
 
-### `glider check`
+### `hot-forklift check`
 
 Validate translations without compiling.
 
 ```bash
-glider check [options]
+hot-forklift check [options]
 ```
 
 **Options:**
@@ -198,29 +198,29 @@ glider check [options]
 
 ```bash
 # Check translations with default config
-glider check
+hot-forklift check
 
 # Check specific directory
-glider check -i ./translations
+hot-forklift check -i ./translations
 ```
 
 This command validates that all translations are present for all configured locales without generating output files.
 
-### `glider --help`
+### `hot-forklift --help`
 
 Display help for all commands.
 
 ```bash
-glider --help
-glider <command> --help
+hot-forklift --help
+hot-forklift <command> --help
 ```
 
-### `glider --version`
+### `hot-forklift --version`
 
 Display the version number.
 
 ```bash
-glider --version
+hot-forklift --version
 ```
 
 ### 4. Use in your code
@@ -228,7 +228,7 @@ glider --version
 **With runtime locale (recommended):**
 
 ```typescript
-import { setLocale, greeting, auth_login_title } from "./src/glider/_index";
+import { setLocale, greeting, auth_login_title } from "./src/hot-forklift/_index";
 
 // Set the global locale once
 setLocale("es");
@@ -244,7 +244,7 @@ console.log(auth_login_title());
 **With explicit locale parameter:**
 
 ```typescript
-import { greeting, auth_login_title } from "./src/glider/_index";
+import { greeting, auth_login_title } from "./src/hot-forklift/_index";
 
 // Pass locale explicitly
 console.log(greeting("en", { name: "Alice" }));
@@ -257,7 +257,7 @@ console.log(auth_login_title("es"));
 **Using namespace objects:**
 
 ```typescript
-import { translations } from "./src/glider/translations/messages";
+import { translations } from "./src/hot-forklift/messages/messages";
 
 // Access translations via dot notation
 console.log(translations.auth.login.title("en"));

@@ -1,12 +1,12 @@
 {
-  "name": "glider",
+  "name": "hot-forklift",
   "version": "1.0.0",
   "description": "i18n compiler that generates TypeScript functions from JSON translations",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "glider": "./dist/cli.js"
+    "hot-forklift": "./dist/cli.js"
   },
   "exports": {
     ".": {

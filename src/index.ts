@@ -1,5 +1,5 @@
 /**
- * Glider i18n Compiler
+ * Hot Forklift i18n Compiler
  *
  * i18n compiler that generates TypeScript functions from JSON translations.
  *
@@ -7,7 +7,7 @@
  */
 
 export type {
-  GliderConfig,
+  HotForkliftConfig,
   Locale,
   TranslationParams,
   TranslationFunction,

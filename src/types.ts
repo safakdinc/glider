@@ -1,14 +1,14 @@
 /**
- * Glider i18n Compiler - Type Definitions
+ * Hot Forklift i18n Compiler - Type Definitions
  *
- * Import these types in your glider.config.ts:
- * import type { GliderConfig } from '@glider/compiler';
+ * Import these types in your hot-forklift.config.ts:
+ * import type { HotForkliftConfig } from 'hot-forklift';
  */
 
 /**
- * Configuration for the Glider i18n compiler
+ * Configuration for the Hot Forklift i18n compiler
  */
-export interface GliderConfig {
+export interface HotForkliftConfig {
   /**
    * Supported locales in your application
    * These will be used for type generation and validation
@@ -33,8 +33,8 @@ export interface GliderConfig {
   /**
    * Output directory for compiled translations
    * Relative to the project root
-   * @example 'src/glider' or 'lib/glider'
-   * @default 'src/glider'
+   * @example 'src/hot-forklift' or 'lib/hot-forklift'
+   * @default 'src/hot-forklift'
    */
   outputDir?: string;
 

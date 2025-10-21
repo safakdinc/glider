@@ -19,7 +19,7 @@ const __dirname = path.dirname(__filename);
 /**
  * Main compiler function
  */
-async function compile(overrides?: Partial<import("@/types.js").GliderConfig>) {
+async function compile(overrides?: Partial<import("@/types.js").HotForkliftConfig>) {
   console.log("Starting compilation...\n");
 
   const config = await loadConfig(overrides);

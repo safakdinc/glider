@@ -19,8 +19,8 @@ try {
 const program = new Command();
 
 program
-  .name("glider")
-  .description("Glider i18n Compiler - Generate TypeScript functions from JSON translations")
+  .name("hot-forklift")
+  .description("Hot Forklift i18n Compiler - Generate TypeScript functions from JSON translations")
   .version(version);
 
 // Compile command
@@ -46,7 +46,7 @@ program
     const { default: compile } = await import("@/compiler.js");
 
     //Pass CLI options to override config
-    const overrides: Partial<import("@/types.js").GliderConfig> = {};
+    const overrides: Partial<import("@/types.js").HotForkliftConfig> = {};
     if (options.input) overrides.messagesDir = options.input;
     if (options.output) overrides.outputDir = options.output;
     if (options.locales) overrides.locales = options.locales;
@@ -72,13 +72,13 @@ program
       process.exit(1);
     }
 
-    const configTemplate = `import type { GliderConfig } from 'glider';
+    const configTemplate = `import type { HotForkliftConfig } from 'hot-forklift';
 
-const config: GliderConfig = {
+const config: HotForkliftConfig = {
   locales: ['en'],
   defaultLocale: 'en',
   // messagesDir: 'messages', // default
-  // outputDir: 'src/glider', // default
+  // outputDir: 'src/hot-forklift', // default
 };
 
 export default config;
@@ -89,7 +89,7 @@ export default config;
     console.log("\nNext steps:");
     console.log("  1. Update the config with your locales and paths");
     console.log("  2. Create your messages directory with JSON files");
-    console.log("  3. Run 'glider compile' to generate TypeScript functions");
+    console.log("  3. Run 'hot-forklift compile' to generate TypeScript functions");
   });
 
 // Info command

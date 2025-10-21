@@ -1,6 +1,5 @@
 node_modules/
-glider/
-translations/
+hot-forklift/
 dist/
 *.log
 .DS_Store

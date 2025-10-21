@@ -1,32 +1,32 @@
 import fs from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
-import type { GliderConfig } from "@/types.js";
+import type { HotForkliftConfig } from "@/types.js";
 
 /**
  * Internal compiler configuration (resolved paths)
  */
-export interface CompilerConfig extends GliderConfig {
+export interface CompilerConfig extends HotForkliftConfig {
   messagesDir: string;
   outputDir: string;
 }
 
 /**
- * Load configuration from glider.config.ts
+ * Load configuration from hot-forklift.config.ts
  */
-export async function loadConfig(overrides?: Partial<GliderConfig>): Promise<CompilerConfig> {
+export async function loadConfig(overrides?: Partial<HotForkliftConfig>): Promise<CompilerConfig> {
   const cwd = process.cwd();
-  const configPath = path.join(cwd, "glider.config.ts");
+  const configPath = path.join(cwd, "hot-forklift.config.ts");
 
   if (!fs.existsSync(configPath)) {
-    console.error("glider.config.ts not found in project root!");
-    console.log("Create a glider.config.ts file in your project root");
+    console.error("hot-forklift.config.ts not found in project root!");
+    console.log("Create a hot-forklift.config.ts file in your project root");
     process.exit(1);
   }
 
   try {
     const configModule = await import(pathToFileURL(configPath).href);
-    const userConfig = configModule.default as GliderConfig;
+    const userConfig = configModule.default as HotForkliftConfig;
 
     // Merge user config with CLI overrides and apply defaults
     const merged = {
@@ -36,14 +36,14 @@ export async function loadConfig(overrides?: Partial<GliderConfig>): Promise<Com
 
     return {
       messagesDir: path.resolve(cwd, merged.messagesDir ?? "messages"),
-      outputDir: path.resolve(cwd, merged.outputDir ?? "src/glider"),
+      outputDir: path.resolve(cwd, merged.outputDir ?? "src/hot-forklift"),
       defaultLocale: merged.defaultLocale,
       locales: merged.locales,
       validateTranslations: merged.validateTranslations ?? true,
       generateNamespaces: merged.generateNamespaces ?? true,
     };
   } catch (error: any) {
-    console.error("Failed to load glider.config.ts:", error.message);
+    console.error("Failed to load hot-forklift.config.ts:", error.message);
     process.exit(1);
   }
 }

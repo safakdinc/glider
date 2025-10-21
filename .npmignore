@@ -21,7 +21,7 @@ coverage/
 
 # Project-specific (not part of package)
 translations/
-glider/
+hot-forklift/
 demo*.js
 demo*.ts
 index.js

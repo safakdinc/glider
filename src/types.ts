@@ -25,7 +25,7 @@ export interface HotForkliftConfig {
   /**
    * Directory containing translation JSON files
    * Relative to the project root
-   * @example 'messages' or 'glider/translations'
+   * @example 'messages' or 'hot-forklift/translations'
    * @default 'messages'
    */
   messagesDir?: string;

@@ -59,13 +59,13 @@ program
 // Init command
 program
   .command("init")
-  .description("Initialize a new Glider configuration file")
+  .description("Initialize a new hot-forklift configuration file")
   .option("-d, --dir <path>", "Directory to create config file in", ".")
   .action(async (options) => {
     const { writeFileSync, existsSync } = await import("fs");
     const { resolve } = await import("path");
 
-    const configPath = resolve(options.dir, "glider.config.ts");
+    const configPath = resolve(options.dir, "hot-forklift.config.ts");
 
     if (existsSync(configPath)) {
       console.error(`Error: Config file already exists at ${configPath}`);

@@ -36,9 +36,9 @@ pnpm add -D glider tsx
 
 ### 1. Create your translation files
 
-Create JSON files in a `translations` directory (or any directory you prefer):
+Create JSON files in a `messages` directory (or any directory you prefer):
 
-**translations/en.json:**
+**messages/en.json:**
 
 ```json
 {
@@ -52,7 +52,7 @@ Create JSON files in a `translations` directory (or any directory you prefer):
 }
 ```
 
-**translations/es.json:**
+**messages/es.json:**
 
 ```json
 {
@@ -76,14 +76,23 @@ import type { GliderConfig } from "glider";
 const config: GliderConfig = {
   locales: ["en", "es"],
   defaultLocale: "en",
-  translationsDir: "translations",
-  outputDir: "src/glider",
-  validateTranslations: true,
-  generateNamespaces: true,
+  // messagesDir: "messages", // default
+  // outputDir: "src/glider", // default
+  // validateTranslations: true, // default
+  // generateNamespaces: true, // default
 };
 
 export default config;
 ```
+
+**Configuration Options:**
+
+- `locales` (required) - Array of supported locale codes
+- `defaultLocale` (required) - Default locale for your application
+- `messagesDir` (optional) - Directory containing translation JSON files (default: `"messages"`)
+- `outputDir` (optional) - Output directory for compiled files (default: `"src/glider"`)
+- `validateTranslations` (optional) - Check for missing translations (default: `true`)
+- `generateNamespaces` (optional) - Generate namespace objects (default: `true`)
 
 ### 3. Compile translations
 
@@ -107,6 +116,111 @@ src/glider/
 ├── _index.ts            # Re-exports all translations
 └── translations/
     └── messages.ts      # Generated translation functions
+```
+
+## CLI Commands
+
+### `glider compile`
+
+Compile translations from JSON to TypeScript.
+
+```bash
+glider compile [options]
+```
+
+**Options:**
+
+- `-i, --input <path>` - Input directory containing translation JSON files (overrides config)
+- `-o, --output <path>` - Output directory for compiled TypeScript files (overrides config)
+- `-l, --locales <locales>` - Comma-separated list of locales (overrides config)
+- `--no-validate` - Skip translation validation
+- `--no-namespaces` - Don't generate namespace objects
+
+**Examples:**
+
+```bash
+# Compile with default config
+glider compile
+
+# Override input/output directories
+glider compile -i ./i18n -o ./src/translations
+
+# Compile only specific locales
+glider compile -l en,es,fr
+
+# Skip validation
+glider compile --no-validate
+```
+
+### `glider init`
+
+Initialize a new Glider configuration file.
+
+```bash
+glider init [options]
+```
+
+**Options:**
+
+- `-d, --dir <path>` - Directory to create config file in (default: current directory)
+
+**Example:**
+
+```bash
+glider init
+```
+
+Creates a `glider.config.ts` file with default settings.
+
+### `glider info`
+
+Display current configuration.
+
+```bash
+glider info
+```
+
+Shows your current Glider configuration including locales, directories, and compiler options.
+
+### `glider check`
+
+Validate translations without compiling.
+
+```bash
+glider check [options]
+```
+
+**Options:**
+
+- `-i, --input <path>` - Input directory containing translation JSON files (overrides config)
+
+**Example:**
+
+```bash
+# Check translations with default config
+glider check
+
+# Check specific directory
+glider check -i ./translations
+```
+
+This command validates that all translations are present for all configured locales without generating output files.
+
+### `glider --help`
+
+Display help for all commands.
+
+```bash
+glider --help
+glider <command> --help
+```
+
+### `glider --version`
+
+Display the version number.
+
+```bash
+glider --version
 ```
 
 ### 4. Use in your code

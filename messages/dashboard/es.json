@@ -1,0 +1,61 @@
+{
+  "page": {
+    "title": "Panel de Control",
+    "subtitle": "Bienvenido a tu panel, {name}"
+  },
+  "stats": {
+    "cards": [
+      {
+        "title": "Usuarios Totales",
+        "value": "{count}",
+        "change": "+{percent}% del mes pasado",
+        "trend": "up"
+      },
+      {
+        "title": "Ingresos",
+        "value": "${amount}",
+        "change": "+{percent}% del mes pasado",
+        "trend": "up"
+      },
+      {
+        "title": "Proyectos Activos",
+        "value": "{count}",
+        "change": "{percent}% del mes pasado",
+        "trend": "down"
+      }
+    ],
+    "overview": {
+      "title": "Resumen",
+      "description": "Tu rendimiento este mes",
+      "metrics": {
+        "visitors": {
+          "label": "Visitantes Totales",
+          "value": "{count}",
+          "comparison": {
+            "previous": "{count} el mes pasado",
+            "change": "{percent}%"
+          }
+        },
+        "conversions": {
+          "label": "Tasa de Conversión",
+          "value": "{percent}%",
+          "comparison": {
+            "previous": "{percent}% el mes pasado",
+            "change": "{percent}%"
+          }
+        }
+      }
+    }
+  },
+  "widgets": {
+    "recentActivity": {
+      "title": "Actividad Reciente",
+      "empty": "No hay actividad reciente",
+      "items": [
+        "{user} creó un nuevo proyecto",
+        "{user} actualizó {item}",
+        "{user} invitó a {count} miembros del equipo"
+      ]
+    }
+  }
+}

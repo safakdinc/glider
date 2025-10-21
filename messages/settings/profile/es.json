@@ -1,0 +1,59 @@
+{
+  "profile": {
+    "header": {
+      "title": "Perfil de Usuario",
+      "subtitle": "Gestiona tu información personal"
+    },
+    "form": {
+      "personalInfo": {
+        "title": "Información Personal",
+        "fields": {
+          "firstName": {
+            "label": "Nombre",
+            "placeholder": "Ingresa tu nombre",
+            "validation": {
+              "required": "El nombre es obligatorio",
+              "minLength": "Debe tener al menos {min} caracteres",
+              "maxLength": "No puede exceder {max} caracteres"
+            }
+          },
+          "lastName": {
+            "label": "Apellido",
+            "placeholder": "Ingresa tu apellido"
+          },
+          "bio": {
+            "label": "Biografía",
+            "placeholder": "Cuéntanos sobre ti",
+            "hint": "{current}/{max} caracteres"
+          }
+        }
+      },
+      "contact": {
+        "title": "Información de Contacto",
+        "fields": {
+          "email": "Correo Electrónico",
+          "phone": "Número de Teléfono",
+          "location": {
+            "label": "Ubicación",
+            "fields": {
+              "country": "País",
+              "city": "Ciudad",
+              "address": "Dirección",
+              "zipCode": "Código Postal"
+            }
+          }
+        }
+      },
+      "preferences": {
+        "title": "Preferencias",
+        "language": "Idioma Preferido",
+        "timezone": "Zona Horaria",
+        "notifications": {
+          "email": "Notificaciones por Correo",
+          "push": "Notificaciones Push",
+          "sms": "Notificaciones SMS"
+        }
+      }
+    }
+  }
+}

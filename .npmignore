@@ -1,0 +1,39 @@
+# Build artifacts
+node_modules/
+*.log
+dist/
+build/
+
+# Test files
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+__tests__/
+coverage/
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Project-specific (not part of package)
+translations/
+glider/
+demo*.js
+demo*.ts
+index.js
+README.old.md
+EXAMPLE.md
+
+# Git
+.git/
+.gitignore
+.github/
+
+# CI
+.travis.yml
+.circleci/
+azure-pipelines.yml

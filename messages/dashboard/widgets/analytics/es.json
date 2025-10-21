@@ -1,0 +1,43 @@
+{
+  "chart": {
+    "title": "Gráfico de Análisis",
+    "config": {
+      "type": "line",
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "legend": {
+            "position": "top",
+            "labels": {
+              "usePointStyle": true,
+              "padding": 20
+            }
+          },
+          "tooltip": {
+            "enabled": true,
+            "mode": "index",
+            "callbacks": {
+              "title": "Fecha: {date}",
+              "label": "{dataset}: {value} {unit}"
+            }
+          }
+        }
+      }
+    },
+    "data": {
+      "labels": ["Ene", "Feb", "Mar", "Abr", "May", "Jun"],
+      "datasets": [
+        {
+          "label": "Ingresos",
+          "color": "#3b82f6",
+          "tooltip": "${value}K"
+        },
+        {
+          "label": "Usuarios",
+          "color": "#10b981",
+          "tooltip": "{value} usuarios"
+        }
+      ]
+    }
+  }
+}

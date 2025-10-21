@@ -1,0 +1,52 @@
+{
+  "component": {
+    "title": "Renderizador de Gráficos",
+    "settings": {
+      "display": {
+        "theme": {
+          "mode": "light",
+          "colors": {
+            "primary": "#3b82f6",
+            "secondary": "#10b981",
+            "background": "#ffffff",
+            "text": {
+              "primary": "#1f2937",
+              "secondary": "#6b7280",
+              "muted": "#9ca3af"
+            }
+          },
+          "fonts": {
+            "family": "Inter, sans-serif",
+            "sizes": {
+              "small": "12px",
+              "medium": "14px",
+              "large": "16px"
+            }
+          }
+        },
+        "animation": {
+          "enabled": true,
+          "duration": 750,
+          "easing": "easeInOutQuart"
+        }
+      },
+      "interactions": {
+        "hover": {
+          "enabled": true,
+          "mode": "nearest",
+          "animationDuration": 200
+        },
+        "click": {
+          "enabled": true,
+          "handler": "showDetails"
+        }
+      }
+    },
+    "messages": {
+      "loading": "Cargando datos del gráfico...",
+      "error": "Error al cargar el gráfico: {reason}",
+      "empty": "No hay datos disponibles para el período seleccionado",
+      "updated": "Gráfico actualizado a las {time}"
+    }
+  }
+}

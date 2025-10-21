@@ -1,0 +1,73 @@
+{
+  "app": {
+    "name": "My Application",
+    "tagline": "The best app ever",
+    "version": "v{version}"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign In",
+      "subtitle": "Welcome back, {username}!",
+      "form": {
+        "email": {
+          "label": "Email Address",
+          "placeholder": "Enter your email",
+          "errors": {
+            "required": "Email is required",
+            "invalid": "Please enter a valid email",
+            "notFound": "Email not found"
+          }
+        },
+        "password": {
+          "label": "Password",
+          "placeholder": "Enter your password",
+          "errors": {
+            "required": "Password is required",
+            "minLength": "Password must be at least {min} characters",
+            "weak": "Password is too weak"
+          }
+        },
+        "rememberMe": "Remember me for {days} days",
+        "submit": "Sign In",
+        "forgotPassword": "Forgot password?"
+      },
+      "social": {
+        "divider": "Or continue with",
+        "buttons": {
+          "google": "Continue with Google",
+          "github": "Continue with GitHub",
+          "apple": "Continue with Apple"
+        }
+      }
+    },
+    "register": {
+      "title": "Create Account",
+      "alreadyHaveAccount": "Already have an account? {link}"
+    }
+  },
+  "navigation": {
+    "main": ["Dashboard", "Projects", "Team", "Settings"],
+    "user": {
+      "menu": ["Profile", "Settings", "Billing", "Sign Out"],
+      "greeting": "Hello, {name}!"
+    }
+  },
+  "common": {
+    "actions": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "edit": "Edit",
+      "create": "Create",
+      "update": "Update",
+      "confirm": "Confirm",
+      "close": "Close"
+    },
+    "messages": {
+      "success": "{action} completed successfully!",
+      "error": "An error occurred: {message}",
+      "loading": "Loading...",
+      "noData": "No data available"
+    }
+  }
+}

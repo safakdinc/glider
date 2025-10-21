@@ -1,0 +1,43 @@
+{
+  "chart": {
+    "title": "Analytics Chart",
+    "config": {
+      "type": "line",
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "legend": {
+            "position": "top",
+            "labels": {
+              "usePointStyle": true,
+              "padding": 20
+            }
+          },
+          "tooltip": {
+            "enabled": true,
+            "mode": "index",
+            "callbacks": {
+              "title": "Date: {date}",
+              "label": "{dataset}: {value} {unit}"
+            }
+          }
+        }
+      }
+    },
+    "data": {
+      "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+      "datasets": [
+        {
+          "label": "Revenue",
+          "color": "#3b82f6",
+          "tooltip": "${value}K"
+        },
+        {
+          "label": "Users",
+          "color": "#10b981",
+          "tooltip": "{value} users"
+        }
+      ]
+    }
+  }
+}

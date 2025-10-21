@@ -1,0 +1,61 @@
+{
+  "page": {
+    "title": "Dashboard",
+    "subtitle": "Welcome to your dashboard, {name}"
+  },
+  "stats": {
+    "cards": [
+      {
+        "title": "Total Users",
+        "value": "{count}",
+        "change": "+{percent}% from last month",
+        "trend": "up"
+      },
+      {
+        "title": "Revenue",
+        "value": "${amount}",
+        "change": "+{percent}% from last month",
+        "trend": "up"
+      },
+      {
+        "title": "Active Projects",
+        "value": "{count}",
+        "change": "{percent}% from last month",
+        "trend": "down"
+      }
+    ],
+    "overview": {
+      "title": "Overview",
+      "description": "Your performance this month",
+      "metrics": {
+        "visitors": {
+          "label": "Total Visitors",
+          "value": "{count}",
+          "comparison": {
+            "previous": "{count} last month",
+            "change": "{percent}%"
+          }
+        },
+        "conversions": {
+          "label": "Conversion Rate",
+          "value": "{percent}%",
+          "comparison": {
+            "previous": "{percent}% last month",
+            "change": "{percent}%"
+          }
+        }
+      }
+    }
+  },
+  "widgets": {
+    "recentActivity": {
+      "title": "Recent Activity",
+      "empty": "No recent activity",
+      "items": [
+        "{user} created a new project",
+        "{user} updated {item}",
+        "{user} invited {count} team members"
+      ]
+    }
+  }
+}

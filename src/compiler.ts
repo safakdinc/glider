@@ -74,7 +74,7 @@ async function compile(overrides?: Partial<import("@/types.js").HotForkliftConfi
     const outputFile = path.join(outputPath, "messages.ts");
 
     // Write runtime file once
-    const runtimeFile = path.join(config.outputDir, "_runtime.ts");
+    const runtimeFile = path.join(config.outputDir, "runtime.ts");
     if (!fs.existsSync(runtimeFile)) {
       const runtimeContent = generateRuntimeFile(config);
       fs.writeFileSync(runtimeFile, runtimeContent);
@@ -84,8 +84,8 @@ async function compile(overrides?: Partial<import("@/types.js").HotForkliftConfi
     const relToOutputRoot = path.relative(outputPath, config.outputDir) || ".";
     const runtimeImportPath =
       relToOutputRoot === "."
-        ? "./_runtime.js"
-        : path.posix.join(relToOutputRoot.replace(/\\\\/g, "/"), "_runtime.js");
+        ? "./runtime.js"
+        : path.posix.join(relToOutputRoot.replace(/\\\\/g, "/"), "runtime.js");
     const importPrefix = `import { getLocale } from '${runtimeImportPath}';\n\n`;
     const finalOutput = importPrefix + output;
     fs.writeFileSync(outputFile, finalOutput);
@@ -119,9 +119,23 @@ async function compile(overrides?: Partial<import("@/types.js").HotForkliftConfi
   // Generate centralized index file
   console.log("Generating index file...");
   const indexContent = generateIndexFile(allExports);
-  const indexFile = path.join(config.outputDir, "_index.ts");
+  const indexFile = path.join(config.outputDir, "index.ts");
   fs.writeFileSync(indexFile, indexContent);
   console.log(`Generated ${path.relative(process.cwd(), indexFile)}\n`);
+
+  // Generate .gitignore in output directory
+  const gitignoreContent = `# Generated translation files - do not commit
+*
+`;
+  const gitignoreFile = path.join(config.outputDir, ".gitignore");
+  fs.writeFileSync(gitignoreFile, gitignoreContent);
+
+  // Generate .prettierignore in output directory
+  const prettierignoreContent = `# Generated translation files - do not format
+*
+`;
+  const prettierignoreFile = path.join(config.outputDir, ".prettierignore");
+  fs.writeFileSync(prettierignoreFile, prettierignoreContent);
 
   console.log("Compilation complete!\n");
 }

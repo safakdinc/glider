@@ -112,8 +112,10 @@ This generates the following structure:
 
 ```
 src/hot-forklift/
-├── _runtime.ts          # Runtime utilities (setLocale, getLocale)
-├── _index.ts            # Re-exports all translations
+├── runtime.ts           # Runtime utilities (setLocale, getLocale)
+├── index.ts             # Re-exports all translations
+├── .gitignore           # Ignores generated files from git
+├── .prettierignore      # Ignores generated files from formatting
 └── messages/
     └── messages.ts      # Generated translation functions
 ```
@@ -228,7 +230,7 @@ hot-forklift --version
 **With runtime locale (recommended):**
 
 ```typescript
-import { setLocale, greeting, auth_login_title } from "./src/hot-forklift/_index";
+import { setLocale, greeting, auth_login_title } from "./src/hot-forklift/index";
 
 // Set the global locale once
 setLocale("es");
@@ -244,7 +246,7 @@ console.log(auth_login_title());
 **With explicit locale parameter:**
 
 ```typescript
-import { greeting, auth_login_title } from "./src/hot-forklift/_index";
+import { greeting, auth_login_title } from "./src/hot-forklift/index";
 
 // Pass locale explicitly
 console.log(greeting("en", { name: "Alice" }));

@@ -13,6 +13,8 @@
 - **Namespace support** - Organize translations with dot notation
 - **Validation** - Detect missing translations at compile time
 - **Nested folders** - Mirror your app structure
+- **SSR-friendly** - Resolve translations at build time for frameworks like Astro
+- **Zero client overhead** - Ship only resolved strings, not translation functions
 
 ## Installation
 
@@ -112,13 +114,15 @@ This generates the following structure:
 
 ```
 src/hot-forklift/
-├── runtime.ts           # Runtime utilities (setLocale, getLocale)
+├── runtime.ts           # Runtime utilities (setLocale, getLocale, resolveTranslations)
 ├── index.ts             # Re-exports all translations
 ├── .gitignore           # Ignores generated files from git
 ├── .prettierignore      # Ignores generated files from formatting
 └── messages/
     └── messages.ts      # Generated translation functions
 ```
+
+**Note:** When using nested folders (e.g., `messages/components/navbar/`), the compiler generates a separate `messages.ts` file for each folder with its own namespace object.
 
 ## CLI Commands
 
@@ -268,3 +272,130 @@ console.log(translations.auth.login.title("en"));
 console.log(translations.greeting("es", { name: "Bob" }));
 // Output: "¡Hola, Bob!"
 ```
+
+## SSR and Framework Integration
+
+Hot Forklift provides utilities specifically designed for SSR frameworks like Astro, where you need to resolve translations at build time and pass them to client components.
+
+Use the `resolveTranslations` utility to convert all translation functions to their string values at build time:
+
+```typescript
+import {
+  type component_translations,
+  type ResolvedTranslations,
+  resolveTranslations,
+} from "./src/hot-forklift";
+
+// In your Astro component (SSR)
+const resolvedtranslations = resolveTranslations(component_translations);
+// resolvedtranslations now contains only strings, not functions
+
+// Pass to React component
+<Navbar translations={navTranslations} />
+```
+
+### Type Safety with `ResolvedTranslations`
+
+The `ResolvedTranslations<T>` type automatically infers the correct structure:
+
+```typescript
+import type { component_translations } from "./hot-forklift";
+import type { ResolvedTranslations } from "./hot-forklift";
+
+// In your React component
+interface ComponentProps {
+  translations: ResolvedTranslations<typeof component_translations>;
+}
+
+export default function Navbar({ translations }: ComponentProps) {
+  // translations.auth.login.title is now a string, not a function
+  return <h1>{translations.auth.login.title}</h1>;
+}
+```
+
+### Complete Astro + React Example
+
+**messages/components/navbar/en.json:**
+
+```json
+{
+  "nav": {
+    "solutions": "Solutions",
+    "company": "Company",
+    "pricing": "Pricing"
+  }
+}
+```
+
+**layout.astro:**
+
+```astro
+---
+import { resolveTranslations, component_translations } from "@/hot-forklift";
+import { setLocale } from "@/hot-forklift/runtime";
+import Component from "@/components/component";
+
+const lang = Astro.params.lang || "en";
+setLocale(lang);
+
+// Resolve all translation functions to strings
+const resolvedTranslations = resolveTranslations(component_translations);
+---
+
+<html>
+  <body>
+    <Component client:load translations={resolvedTranslations} />
+  </body>
+</html>
+```
+
+**components/navbar.tsx:**
+
+```tsx
+import type { component_translations, ResolvedTranslations } from "@/hot-forklift";
+
+interface NavbarProps {
+  translations: ResolvedTranslations<typeof component_translations>;
+}
+
+export default function Navbar({ translations }: NavbarProps) {
+  return (
+    <nav>
+      <a href="/solutions">{translations.nav.solutions}</a>
+      <a href="/company">{translations.nav.company}</a>
+      <a href="/pricing">{translations.nav.pricing}</a>
+    </nav>
+  );
+}
+```
+
+### Benefits of This Approach
+
+1. **Type-safe** - Full autocomplete and type checking
+2. **Zero client bundle** - Only strings are shipped to the browser, not translation functions
+3. **SSR-friendly** - All translations resolved at build time
+4. **Serialization-safe** - No issues with function serialization across server/client boundary
+5. **Performance** - No runtime translation overhead on the client
+
+### Nested Folders and Namespace Imports
+
+When using nested folder structures, import namespaces from `@/hot-forklift`
+
+```typescript
+// Import specific namespace from nested folder
+import { component_translations_company } from "@/hot-forklift";
+
+// Resolve it separately
+const companyTranslations = resolveTranslations(component_translations_company);
+
+// Use with type inference
+interface Props {
+  companyTranslations: ResolvedTranslations<typeof component_translations_company>;
+}
+```
+
+This allows you to:
+
+- Split translations into logical sections
+- Reduce bundle size by only importing what you need
+- Maintain clear separation of concerns

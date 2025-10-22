@@ -25,6 +25,13 @@ async function compile(overrides?: Partial<import("@/types.js").HotForkliftConfi
   const config = await loadConfig(overrides);
   console.log(`Config loaded: ${config.locales.join(", ")} (default: ${config.defaultLocale})\n`);
 
+  // Clean output directory before compilation
+  if (fs.existsSync(config.outputDir)) {
+    console.log(`Cleaning output directory: ${config.outputDir}`);
+    fs.rmSync(config.outputDir, { recursive: true, force: true });
+    console.log("Output directory cleaned.\n");
+  }
+
   const localeFilesByPath = findLocaleFiles(config.messagesDir);
 
   console.log(`Found ${Object.keys(localeFilesByPath).length} message paths:\n`);
@@ -73,9 +80,9 @@ async function compile(overrides?: Partial<import("@/types.js").HotForkliftConfi
     const output = generateCompiledOutput(config, localeData, folderPrefix);
     const outputFile = path.join(outputPath, "messages.ts");
 
-    // Write runtime file once
+    // Write runtime file on first iteration
     const runtimeFile = path.join(config.outputDir, "runtime.ts");
-    if (!fs.existsSync(runtimeFile)) {
+    if (relativePath === "" || Object.keys(localeFilesByPath)[0] === relativePath) {
       const runtimeContent = generateRuntimeFile(config);
       fs.writeFileSync(runtimeFile, runtimeContent);
     }
@@ -109,10 +116,13 @@ async function compile(overrides?: Partial<import("@/types.js").HotForkliftConfi
       ? `./messages/${relativePath}/messages`
       : "./messages/messages";
 
+    const namespaceName = folderPrefix ? folderPrefix.replace(/\//g, "_") : "translations";
+
     allExports.push({
       path: relativePath || "(root)",
       importPath: relativeImportPath,
       functions: exportFunctions,
+      namespaceName: namespaceName,
     });
   }
 

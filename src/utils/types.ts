@@ -33,6 +33,7 @@ export interface ExportInfo {
   path: string;
   importPath: string;
   functions: string[];
+  namespaceName: string;
 }
 
 /**

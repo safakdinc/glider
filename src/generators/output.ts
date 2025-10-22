@@ -115,14 +115,26 @@ export function generateIndexFile(allExports: ExportInfo[]): string {
     return a.path.localeCompare(b.path);
   });
 
-  for (const { path: msgPath, importPath, functions } of sorted) {
+  for (const { path: msgPath, importPath, functions, namespaceName } of sorted) {
     lines.push(`// From: ${msgPath}`);
     lines.push(`export {`);
     functions.forEach((fn) => {
       lines.push(`  ${fn},`);
     });
+    lines.push(`  ${namespaceName},`);
     lines.push(`} from '${importPath}';\n`);
   }
+
+  // Export runtime utilities
+  lines.push("// Runtime utilities");
+  lines.push("export {");
+  lines.push("  type Locale,");
+  lines.push("  locales,");
+  lines.push("  setLocale,");
+  lines.push("  getLocale,");
+  lines.push("  resolveTranslations,");
+  lines.push("  type ResolvedTranslations,");
+  lines.push("} from './runtime';\n");
 
   return lines.join("\n");
 }
@@ -132,12 +144,70 @@ export function generateIndexFile(allExports: ExportInfo[]): string {
  */
 export function generateRuntimeFile(config: CompilerConfig): string {
   const localeType = generateLocaleType(config);
+  const localesArray = config.locales.map((l) => `"${l}"`).join(", ");
 
   return (
     `// Runtime utilities for translations\n` +
     `export type Locale = ${localeType};\n\n` +
+    `/**\n` +
+    ` * Available locales in the application\n` +
+    ` */\n` +
+    `export const locales: readonly Locale[] = [${localesArray}] as const;\n\n` +
     `let currentLocale: Locale = "${config.defaultLocale}";\n\n` +
     `export function setLocale(l: Locale) { currentLocale = l; }\n` +
-    `export function getLocale(): Locale { return currentLocale; }\n`
+    `export function getLocale(): Locale { return currentLocale; }\n\n` +
+    `/**\n` +
+    ` * Utility type that resolves all translation functions in a namespace to their return types.\n` +
+    ` * Recursively converts function types to their return value types (string | number | boolean).\n` +
+    ` *\n` +
+    ` * @example\n` +
+    ` * import { components_navbar } from './messages/components/navbar/messages';\n` +
+    ` * import type { ResolvedTranslations } from './runtime';\n` +
+    ` *\n` +
+    ` * type NavbarTranslations = ResolvedTranslations<typeof components_navbar>;\n` +
+    ` * // NavbarTranslations has same structure but all functions are replaced with their return types\n` +
+    ` */\n` +
+    `export type ResolvedTranslations<T> = {\n` +
+    `  [K in keyof T]: T[K] extends (...args: any[]) => infer R\n` +
+    `    ? R\n` +
+    `    : T[K] extends object\n` +
+    `    ? ResolvedTranslations<T[K]>\n` +
+    `    : T[K];\n` +
+    `};\n\n` +
+    `/**\n` +
+    ` * Recursively resolve all translation functions in a namespace object.\n` +
+    ` * Converts function references to their resolved string/value equivalents.\n` +
+    ` * Useful for SSR frameworks (like Astro) that need to serialize translations\n` +
+    ` * before passing to client components.\n` +
+    ` *\n` +
+    ` * @example\n` +
+    ` * import { components_navbar } from './messages/components/navbar/messages';\n` +
+    ` * import { setLocale, resolveTranslations } from './runtime';\n` +
+    ` * import type { ResolvedTranslations } from './runtime';\n` +
+    ` *\n` +
+    ` * setLocale('es');\n` +
+    ` * const resolved: ResolvedTranslations<typeof components_navbar> = resolveTranslations(components_navbar);\n` +
+    ` * // resolved.nav.solutions === "Soluciones" (string, not function)\n` +
+    ` *\n` +
+    ` * @param obj - The namespace object containing translation functions\n` +
+    ` * @param params - Optional parameters to pass to parameterized translations\n` +
+    ` * @returns A new object with the same structure, but all functions resolved to values\n` +
+    ` */\n` +
+    `export function resolveTranslations<T>(obj: T, params?: Record<string, any>): ResolvedTranslations<T> {\n` +
+    `  if (typeof obj === 'function') {\n` +
+    `    // Call the function, passing params if provided\n` +
+    `    return (params ? obj(undefined, params) : obj()) as any;\n` +
+    `  }\n` +
+    `  if (typeof obj === 'object' && obj !== null) {\n` +
+    `    const result: Record<string, any> = {};\n` +
+    `    for (const key in obj) {\n` +
+    `      // Recursively resolve nested objects/functions\n` +
+    `      const nestedParams = params?.[key];\n` +
+    `      result[key] = resolveTranslations((obj as any)[key], nestedParams);\n` +
+    `    }\n` +
+    `    return result as any;\n` +
+    `  }\n` +
+    `  return obj as any;\n` +
+    `}\n`
   );
 }

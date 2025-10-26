@@ -1,7 +1,12 @@
 import type { Message, MessageData, ExportInfo } from "@/utils/types.js";
 import type { CompilerConfig } from "@/utils/config.js";
 import { generateLocaleType } from "@/utils/config.js";
-import { generateFunctionName, processArrayItem } from "@/utils/helpers.js";
+import {
+  generateFunctionName,
+  processArrayItem,
+  generateParamsTypeName,
+  generateParamsInterface,
+} from "@/utils/helpers.js";
 import type { ArrayItemInfo } from "@/utils/types.js";
 import {
   generateMessageFunction,
@@ -41,10 +46,130 @@ export function generateCompiledOutput(
     });
   });
 
+  // Generate parameter type interfaces first
+  const generatedTypes = new Set<string>();
+  for (const [msgPath, data] of Object.entries(messagesByPath)) {
+    if (data.params.length > 0) {
+      const typeName = generateParamsTypeName(msgPath, folderPrefix);
+      if (!generatedTypes.has(typeName)) {
+        const typeInterface = generateParamsInterface(typeName, data.params);
+        if (typeInterface) {
+          lines.push(typeInterface);
+          generatedTypes.add(typeName);
+        }
+      }
+    }
+  }
+
+  if (generatedTypes.size > 0) {
+    lines.push(""); // Add blank line after type definitions
+  }
+
+  // First pass: identify all array paths and their items
+  const arrayPaths = new Set<string>();
+  const arrayItemObjects = new Map<string, any>(); // Store array item structures
+
+  for (const [msgPath, data] of Object.entries(messagesByPath)) {
+    if (data.isArray && !msgPath.match(/_\d+(?:_|$)/)) {
+      arrayPaths.add(msgPath);
+
+      // Analyze array items to see if they are objects
+      const firstLocaleValue = Object.values(data.values)[0];
+      if (Array.isArray(firstLocaleValue) && firstLocaleValue.length > 0) {
+        const firstItem = firstLocaleValue[0];
+        if (typeof firstItem === "object" && firstItem !== null && !Array.isArray(firstItem)) {
+          // This array contains objects, store the structure
+          arrayItemObjects.set(msgPath, Object.keys(firstItem));
+        }
+      }
+    }
+  }
+
   // Generate individual functions
   for (const [msgPath, data] of Object.entries(messagesByPath)) {
     const functionName = generateFunctionName(msgPath, folderPrefix);
     const { params, isArray, values } = data;
+
+    // Check if this is a top-level array (not a nested array item property)
+    const isTopLevelArray = isArray && !msgPath.match(/_\d+(?:_|$)/);
+
+    if (isTopLevelArray) {
+      // Generate a function that returns array of function references
+      const arrayLength = Array.isArray(Object.values(values)[0])
+        ? Object.values(values)[0].length
+        : 0;
+
+      // Generate JSDoc comment
+      lines.push("/**");
+      Object.entries(values).forEach(([locale, value]) => {
+        lines.push(` * @${locale} ${JSON.stringify(value)}`);
+      });
+      lines.push(" */");
+
+      // Generate function that returns array of item functions
+      lines.push(`export function ${functionName}(): any[] {`);
+      lines.push(`  return [`);
+      for (let idx = 0; idx < arrayLength; idx++) {
+        const itemFunctionName = generateFunctionName(`${msgPath}_${idx}`, folderPrefix);
+        lines.push(`    ${itemFunctionName},`);
+      }
+      lines.push(`  ];`);
+      lines.push(`}`);
+
+      // Add translation metadata
+      lines.push(`${functionName}._translations = ${JSON.stringify(values, null, 2)};`);
+      lines.push("");
+
+      // Generate individual array item functions if items are objects
+      if (arrayItemObjects.has(msgPath)) {
+        const itemKeys = arrayItemObjects.get(msgPath)!;
+
+        for (let idx = 0; idx < arrayLength; idx++) {
+          const itemFunctionName = generateFunctionName(`${msgPath}_${idx}`, folderPrefix);
+
+          // Generate JSDoc for this item
+          lines.push("/**");
+          Object.entries(values).forEach(([locale, value]) => {
+            const arrayValue = value as any[];
+            lines.push(` * @${locale} ${JSON.stringify(arrayValue[idx])}`);
+          });
+          lines.push(" */");
+
+          // Generate function that returns object with property functions
+          lines.push(`export function ${itemFunctionName}(): any {`);
+          lines.push(`  return {`);
+
+          for (const key of itemKeys) {
+            const propPath = `${msgPath}_${idx}_${key}`;
+            const propData = messagesByPath[propPath];
+
+            if (propData && propData.isArray) {
+              // This property is an array, reference its array function
+              const propFunctionName = generateFunctionName(propPath, folderPrefix);
+              lines.push(`    ${key}: ${propFunctionName},`);
+            } else {
+              // This property is a simple value, reference its function
+              const propFunctionName = generateFunctionName(propPath, folderPrefix);
+              lines.push(`    ${key}: ${propFunctionName},`);
+            }
+          }
+
+          lines.push(`  };`);
+          lines.push(`}`);
+
+          // Add metadata
+          const itemValues: Record<string, any> = {};
+          Object.entries(values).forEach(([locale, value]) => {
+            const arrayValue = value as any[];
+            itemValues[locale] = arrayValue[idx];
+          });
+          lines.push(`${itemFunctionName}._translations = ${JSON.stringify(itemValues, null, 2)};`);
+          lines.push("");
+        }
+      }
+
+      continue;
+    }
 
     // Generate JSDoc comment
     lines.push("/**");
@@ -63,24 +188,56 @@ export function generateCompiledOutput(
       const needsParams = arrayInfo.some((info: ArrayItemInfo) => info.needsProcessing);
 
       if (needsParams) {
-        lines.push(`export function ${functionName}(lang?: Locale, params?: any): any[] {`);
+        lines.push(
+          `export function ${functionName}(options?: { lang?: Locale; [key: string]: any }): any[] {`
+        );
       } else {
-        lines.push(`export function ${functionName}(lang?: Locale): any[] {`);
+        lines.push(`export function ${functionName}(options?: { lang?: Locale }): any[] {`);
       }
     } else if (params.length > 0) {
-      lines.push(`export function ${functionName}(lang?: Locale, params?: any): string {`);
+      const paramsTypeName = generateParamsTypeName(msgPath, folderPrefix);
+      lines.push(
+        `export function ${functionName}(options: { lang?: Locale } & ${paramsTypeName}): string {`
+      );
     } else {
-      lines.push(`export function ${functionName}(lang?: Locale): string | number | boolean {`);
-    }
+      // Detect actual return type by checking all locale values
+      const allValues = Object.values(values);
+      const types = new Set(allValues.map((v) => typeof v));
 
+      let returnType: string;
+      if (types.size === 1) {
+        // All values are the same type
+        const singleType = Array.from(types)[0];
+        returnType =
+          singleType === "string"
+            ? "string"
+            : singleType === "number"
+              ? "number"
+              : singleType === "boolean"
+                ? "boolean"
+                : "string | number | boolean";
+      } else {
+        // Mixed types across locales - use union
+        returnType = "string | number | boolean";
+      }
+
+      lines.push(`export function ${functionName}(options?: { lang?: Locale }): ${returnType} {`);
+    }
     lines.push(
       "  " + generateMessageFunction(config, values, params, isArray, true).replace(/\n/g, "\n  ")
     );
-    lines.push("}\n");
+    lines.push("}");
+
+    // Add translation metadata for debugging
+    lines.push(`// Add translation metadata for debugging`);
+    lines.push(`${functionName}._translations = ${JSON.stringify(values, null, 2)};`);
+    lines.push("");
   }
 
   // Generate namespace object
-  const namespaceName = folderPrefix ? folderPrefix.replace(/\//g, "_") : "translations";
+  const namespaceName = folderPrefix
+    ? folderPrefix.replace(/\//g, "_").replace(/-/g, "_")
+    : "translations";
   const namespace = buildNamespaceObject(messagesByPath, folderPrefix);
 
   lines.push("/**");
@@ -133,6 +290,7 @@ export function generateIndexFile(allExports: ExportInfo[]): string {
   lines.push("  setLocale,");
   lines.push("  getLocale,");
   lines.push("  resolveTranslations,");
+  lines.push("  getTranslationDebugInfo,");
   lines.push("  type ResolvedTranslations,");
   lines.push("} from './runtime';\n");
 
@@ -150,6 +308,13 @@ export function generateRuntimeFile(config: CompilerConfig): string {
     `// Runtime utilities for translations\n` +
     `export type Locale = ${localeType};\n\n` +
     `/**\n` +
+    ` * Translation function with metadata\n` +
+    ` */\n` +
+    `export interface TranslationFunction<T = any> {\n` +
+    `  (options?: { lang?: Locale; [key: string]: any }): T;\n` +
+    `  _translations?: Record<Locale, any>;\n` +
+    `}\n\n` +
+    `/**\n` +
     ` * Available locales in the application\n` +
     ` */\n` +
     `export const locales: readonly Locale[] = [${localesArray}] as const;\n\n` +
@@ -157,28 +322,43 @@ export function generateRuntimeFile(config: CompilerConfig): string {
     `export function setLocale(l: Locale) { currentLocale = l; }\n` +
     `export function getLocale(): Locale { return currentLocale; }\n\n` +
     `/**\n` +
-    ` * Utility type that resolves all translation functions in a namespace to their return types.\n` +
-    ` * Recursively converts function types to their return value types (string | number | boolean).\n` +
+    ` * Debug helper to get translation metadata from resolved objects\n` +
+    ` */\n` +
+    `export function getTranslationDebugInfo(resolvedTranslation: any): any {\n` +
+    `  return resolvedTranslation?._debugInfo || null;\n` +
+    `}\n\n` +
+    `/**\n` +
+    ` * Utility type for resolved translations.\n` +
+    ` * Since we cannot determine at compile-time which functions have parameters,\n` +
+    ` * we preserve the original type structure to maintain full type safety.\n` +
+    ` * At runtime, functions without parameters are resolved to strings,\n` +
+    ` * while functions with parameters remain as callable functions.\n` +
     ` *\n` +
     ` * @example\n` +
     ` * import { components_navbar } from './messages/components/navbar/messages';\n` +
     ` * import type { ResolvedTranslations } from './runtime';\n` +
     ` *\n` +
     ` * type NavbarTranslations = ResolvedTranslations<typeof components_navbar>;\n` +
-    ` * // NavbarTranslations has same structure but all functions are replaced with their return types\n` +
+    ` * const resolved = resolveTranslations(components_navbar);\n` +
+    ` * // All functions are converted to their return types\n` +
     ` */\n` +
-    `export type ResolvedTranslations<T> = {\n` +
-    `  [K in keyof T]: T[K] extends (...args: any[]) => infer R\n` +
-    `    ? R\n` +
-    `    : T[K] extends object\n` +
-    `    ? ResolvedTranslations<T[K]>\n` +
-    `    : T[K];\n` +
-    `};\n\n` +
+    `export type ResolvedTranslations<T> = T extends (...args: any[]) => infer R\n` +
+    `  ? R extends object\n` +
+    `    ? ResolvedTranslations<R>\n` +
+    `    : R\n` +
+    `  : T extends object\n` +
+    `  ? { [K in keyof T]: ResolvedTranslations<T[K]> }\n` +
+    `  : T;\n\n` +
     `/**\n` +
     ` * Recursively resolve all translation functions in a namespace object.\n` +
     ` * Converts function references to their resolved string/value equivalents.\n` +
     ` * Useful for SSR frameworks (like Astro) that need to serialize translations\n` +
     ` * before passing to client components.\n` +
+    ` *\n` +
+    ` * NOTE: All translation functions will be resolved to their values.\n` +
+    ` * If your translations use parameter interpolation (e.g., {username}),\n` +
+    ` * those functions cannot be resolved without their parameters.\n` +
+    ` * Consider calling such functions directly instead of using resolveTranslations.\n` +
     ` *\n` +
     ` * @example\n` +
     ` * import { components_navbar } from './messages/components/navbar/messages';\n` +
@@ -196,7 +376,25 @@ export function generateRuntimeFile(config: CompilerConfig): string {
     `export function resolveTranslations<T>(obj: T, params?: Record<string, any>): ResolvedTranslations<T> {\n` +
     `  if (typeof obj === 'function') {\n` +
     `    // Call the function, passing params if provided\n` +
-    `    return (params ? obj(undefined, params) : obj()) as any;\n` +
+    `    const fn = obj as any as TranslationFunction;\n` +
+    `    const resolvedValue = params ? fn(params) : fn();\n` +
+    `    \n` +
+    `    // Check if the resolved value is a complex structure (array/object) that needs further resolution\n` +
+    `    if (typeof resolvedValue === 'object' && resolvedValue !== null) {\n` +
+    `      // The function returned an array or object, recursively resolve it\n` +
+    `      return resolveTranslations(resolvedValue, params) as any;\n` +
+    `    }\n` +
+    `    \n` +
+    `    // Return primitive values directly (string, number, boolean)\n` +
+    `    // This ensures compatibility with React and other frameworks that expect primitives\n` +
+    `    return resolvedValue as any;\n` +
+    `  }\n` +
+    `  if (Array.isArray(obj)) {\n` +
+    `    // Handle arrays - resolve each item\n` +
+    `    return obj.map((item, index) => {\n` +
+    `      const nestedParams = Array.isArray(params) ? params[index] : params?.[index];\n` +
+    `      return resolveTranslations(item, nestedParams);\n` +
+    `    }) as any;\n` +
     `  }\n` +
     `  if (typeof obj === 'object' && obj !== null) {\n` +
     `    const result: Record<string, any> = {};\n` +

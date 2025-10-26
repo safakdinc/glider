@@ -116,7 +116,9 @@ async function compile(overrides?: Partial<import("@/types.js").HotForkliftConfi
       ? `./messages/${relativePath}/messages`
       : "./messages/messages";
 
-    const namespaceName = folderPrefix ? folderPrefix.replace(/\//g, "_") : "translations";
+    const namespaceName = folderPrefix
+      ? folderPrefix.replace(/\//g, "_").replace(/-/g, "_")
+      : "translations";
 
     allExports.push({
       path: relativePath || "(root)",

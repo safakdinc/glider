@@ -10,11 +10,14 @@
 
 - **Tree-shakable** - Only bundle the translations you actually use
 - **Type-safe** - Full TypeScript support with generated types
-- **Namespace support** - Organize translations with dot notation
+- **Parameter types** - Automatic TypeScript interface generation for translation parameters
+- **Namespace support** - Organize translations with dot notation and nested structures
+- **Array support** - Handle arrays of strings, objects, and nested structures
 - **Validation** - Detect missing translations at compile time
-- **Nested folders** - Mirror your app structure
-- **SSR-friendly** - Resolve translations at build time for frameworks like Astro
+- **Nested folders** - Mirror your app structure with automatic function naming
+- **SSG-friendly** - Resolve translations at build time for frameworks like Astro
 - **Zero client overhead** - Ship only resolved strings, not translation functions
+- **Runtime locale** - Set locale once and use translations without passing it every time
 
 ## Installation
 
@@ -67,6 +70,8 @@ Create JSON files in a `messages` directory (or any directory you prefer):
   }
 }
 ```
+
+Hot Forklift supports nested objects, arrays, and mixed types. It will generate appropriate TypeScript functions for each structure.
 
 ### 2. Create configuration file
 
@@ -122,7 +127,11 @@ src/hot-forklift/
     └── messages.ts      # Generated translation functions
 ```
 
-**Note:** When using nested folders (e.g., `messages/components/navbar/`), the compiler generates a separate `messages.ts` file for each folder with its own namespace object.
+**Important notes:**
+
+- When using nested folders (e.g., `messages/components/navbar/`), the compiler generates a separate `messages.ts` file for each folder with its own namespace object.
+- Folder names with hyphens (e.g., `message-folder`) are automatically converted to underscores in function names (e.g., `message_folder_functionName`) to ensure valid JavaScript identifiers.
+- The generated files are automatically added to `.gitignore` and `.prettierignore` in the output directory.
 
 ## CLI Commands
 
@@ -234,7 +243,7 @@ hot-forklift --version
 **With runtime locale (recommended):**
 
 ```typescript
-import { setLocale, greeting, auth_login_title } from "./src/hot-forklift/index";
+import { setLocale, greeting, auth_login_title } from "./src/hot-forklift";
 
 // Set the global locale once
 setLocale("es");
@@ -250,34 +259,95 @@ console.log(auth_login_title());
 **With explicit locale parameter:**
 
 ```typescript
-import { greeting, auth_login_title } from "./src/hot-forklift/index";
+import { greeting, auth_login_title } from "./src/hot-forklift";
 
-// Pass locale explicitly
-console.log(greeting("en", { name: "Alice" }));
+// Pass locale in the options object
+console.log(greeting({ lang: "en", name: "Alice" }));
 // Output: "Hello, Alice!"
 
-console.log(auth_login_title("es"));
+console.log(auth_login_title({ lang: "es" }));
 // Output: "Iniciar Sesión"
 ```
 
 **Using namespace objects:**
 
 ```typescript
-import { translations } from "./src/hot-forklift/messages/messages";
+import { translations } from "./src/hot-forklift";
 
 // Access translations via dot notation
-console.log(translations.auth.login.title("en"));
+console.log(translations.auth.login.title({ lang: "en" }));
 // Output: "Sign In"
 
-console.log(translations.greeting("es", { name: "Bob" }));
+console.log(translations.greeting({ lang: "es", name: "Bob" }));
 // Output: "¡Hola, Bob!"
+
+// Arrays are also supported
+console.log(translations.features({ lang: "en" }));
+// Output: ["Tree-shakable", "Type-safe", "SSR-friendly"]
 ```
+
+## Working with Arrays
+
+Hot Forklift provides full support for arrays in your translations, including arrays of strings, objects, and nested structures.
+
+### Simple Arrays
+
+**messages/en.json:**
+
+```json
+{
+  "navigation": {
+    "main": ["Home", "About", "Contact"]
+  }
+}
+```
+
+```typescript
+import { navigation_main } from "./hot-forklift";
+
+const navItems = navigation_main(); // ["Home", "About", "Contact"]
+```
+
+### Arrays of Objects
+
+**messages/en.json:**
+
+```json
+{
+  "features": [
+    {
+      "title": "Fast",
+      "description": "Lightning fast performance"
+    },
+    {
+      "title": "Secure",
+      "description": "Enterprise-grade security"
+    }
+  ]
+}
+```
+
+```typescript
+import { features, setLocale, resolveTranslations } from "./hot-forklift";
+
+setLocale("en");
+
+// Access individual items via namespace
+console.log(features()[0].title); // "Fast"
+console.log(features()[1].description); // "Enterprise-grade security"
+```
+
+### Nested Arrays
+
+You can also have arrays as properties within objects, or objects within arrays. Hot Forklift handles these complex structures automatically and generates type-safe functions for each level.
 
 ## SSR and Framework Integration
 
 Hot Forklift provides utilities specifically designed for SSR frameworks like Astro, where you need to resolve translations at build time and pass them to client components.
 
-Use the `resolveTranslations` utility to convert all translation functions to their string values at build time:
+> **⚠️ Important Limitation:** The `resolveTranslations` utility **does not support translations with parameter interpolation** (e.g., `{username}`, `{count}`). If your translations use parameters like `"Hello, {name}!"`, you should call those functions directly instead of using `resolveTranslations`. This utility is designed for parameter-free translations that can be fully resolved at build time.
+
+Use the `resolveTranslations` utility to convert translation functions to their string values at build time:
 
 ```typescript
 import {
@@ -288,15 +358,21 @@ import {
 
 // In your Astro component (SSR)
 const resolvedtranslations = resolveTranslations(component_translations);
-// resolvedtranslations now contains only strings, not functions
+// All translation functions become strings
 
 // Pass to React component
 <Navbar translations={navTranslations} />
 ```
 
+**Best practices:**
+
+- Use `resolveTranslations` only for translations **without parameters**
+- For parameterized translations (e.g., `greeting({ name: "User" })`), call the functions directly in your components
+- Keep parameterized and parameter-free translations separate if you plan to use `resolveTranslations`
+
 ### Type Safety with `ResolvedTranslations`
 
-The `ResolvedTranslations<T>` type automatically infers the correct structure:
+The `ResolvedTranslations<T>` type transforms function types to their return types, ensuring the resolved object matches runtime behavior:
 
 ```typescript
 import type { component_translations } from "./hot-forklift";
@@ -308,12 +384,25 @@ interface ComponentProps {
 }
 
 export default function Navbar({ translations }: ComponentProps) {
-  // translations.auth.login.title is now a string, not a function
-  return <h1>{translations.auth.login.title}</h1>;
+  // All translation functions are resolved to strings
+  const title = translations.auth.login.title; // string type
+  const company = translations.nav.company; // string type
+
+  return (
+    <div>
+      <h1>{title}</h1>
+      <p>{company}</p>
+    </div>
+  );
 }
 ```
 
-### Complete Astro + React Example
+**Key points:**
+
+- The `ResolvedTranslations<T>` type converts function types to their return types
+- This ensures TypeScript types match the runtime behavior after resolution
+- All functions are resolved to strings (or their return values)
+- Do not use `resolveTranslations` if your translations have parameter interpolation
 
 **messages/components/navbar/en.json:**
 
@@ -372,10 +461,11 @@ export default function Navbar({ translations }: NavbarProps) {
 ### Benefits of This Approach
 
 1. **Type-safe** - Full autocomplete and type checking
-2. **Zero client bundle** - Only strings are shipped to the browser, not translation functions
-3. **SSR-friendly** - All translations resolved at build time
-4. **Serialization-safe** - No issues with function serialization across server/client boundary
-5. **Performance** - No runtime translation overhead on the client
+2. **Build-time resolution** - All translations resolved to strings at build time
+3. **Zero overhead** - No translation functions shipped to the client
+4. **SSG-friendly** - Perfect for static site generation
+5. **Serialization-safe** - Only strings are passed to client components
+6. **Performance** - Minimal runtime overhead on the client
 
 ### Nested Folders and Namespace Imports
 
@@ -399,3 +489,109 @@ This allows you to:
 - Split translations into logical sections
 - Reduce bundle size by only importing what you need
 - Maintain clear separation of concerns
+
+### Folder Naming Conventions
+
+Hot Forklift automatically handles folder names with hyphens and special characters:
+
+**Directory structure:**
+
+```
+messages/
+  client-side-security/
+    en.json
+    es.json
+```
+
+**Generated function names:**
+
+```typescript
+// Hyphens are converted to underscores
+import { client_side_security_title } from "./hot-forklift";
+
+// Namespace also uses underscores
+import { client_side_security } from "./hot-forklift/messages/client-side-security/messages";
+```
+
+This ensures all generated identifiers are valid JavaScript variable names while preserving your folder structure.
+
+## Advanced Features
+
+### Parameter Interpolation
+
+Support for dynamic values in translations with full TypeScript type safety:
+
+**messages/en.json:**
+
+```json
+{
+  "welcome": "Welcome, {name}! You have {count} messages."
+}
+```
+
+**Generated TypeScript:**
+
+```typescript
+export interface WelcomeParams {
+  name: string | number;
+  count: string | number;
+}
+
+export function welcome(options: { lang?: Locale } & WelcomeParams): string;
+```
+
+**Usage:**
+
+```typescript
+import { welcome } from "./hot-forklift";
+
+// TypeScript provides autocomplete and type checking for parameters
+console.log(welcome({ name: "Alice", count: 5 }));
+// Output: "Welcome, Alice! You have 5 messages."
+
+// All parameters are in a single options object
+console.log(welcome({ lang: "es", name: "Alice", count: 5 }));
+// Output: "¡Bienvenida, Alice! Tienes 5 mensajes."
+
+// TypeScript will show an error if you don't provide required parameters
+// welcome({}); // Error: Property 'name' is missing
+// welcome({ name: "Bob" }); // Error: Property 'count' is missing
+
+// TypeScript will show an error if you use wrong parameter names
+// welcome({ wrongParam: "test" }); // Error: Property 'wrongParam' does not exist
+
+// Numbers work too
+welcome({ name: "Bob", count: 42 });
+```
+
+The compiler automatically generates TypeScript interfaces for each translation function that uses parameters. This provides:
+
+- **Type safety** - Compile-time errors for missing or incorrect parameters
+- **Single object API** - No need to pass locale separately when you have parameters
+- **Required parameters** - TypeScript enforces that you provide all required parameters
+- **Refactoring** - Safe renaming across your codebase
+
+### Mixed Types
+
+Hot Forklift automatically detects and generates correct TypeScript types for your translations:
+
+```json
+{
+  "isActive": true,
+  "count": 42,
+  "message": "Hello"
+}
+```
+
+The generated functions will have return types of `boolean`, `number`, and `string` respectively.
+
+### Debug Information
+
+All generated functions include metadata for debugging:
+
+```typescript
+import { greeting } from "./hot-forklift";
+
+console.log(greeting._translations);
+// Output: { en: "Hello, {name}!", es: "¡Hola, {name}!" }
+```

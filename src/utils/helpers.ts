@@ -42,8 +42,29 @@ export function processArrayItem(item: any): ArrayItemInfo {
 export function generateFunctionName(keyPath: string, folderPrefix: string = ""): string {
   const baseName = keyPath.replace(/\./g, "_").replace(/\[(\d+)\]/g, "_$1");
   if (folderPrefix) {
-    const prefix = folderPrefix.replace(/\//g, "_") + "_";
+    const prefix = folderPrefix.replace(/\//g, "_").replace(/-/g, "_") + "_";
     return prefix + baseName;
   }
   return baseName;
+}
+
+/**
+ * Generate TypeScript type name from a key path
+ */
+export function generateParamsTypeName(keyPath: string, folderPrefix: string = ""): string {
+  const functionName = generateFunctionName(keyPath, folderPrefix);
+  // Capitalize first letter and add Params suffix
+  return functionName.charAt(0).toUpperCase() + functionName.slice(1) + "Params";
+}
+
+/**
+ * Generate TypeScript interface for parameters
+ */
+export function generateParamsInterface(typeName: string, params: string[]): string {
+  if (params.length === 0) {
+    return "";
+  }
+
+  const properties = params.map((param) => `  ${param}: string | number;`).join("\n");
+  return `export interface ${typeName} {\n${properties}\n}\n`;
 }

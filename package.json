@@ -1,6 +1,6 @@
 {
   "name": "hot-forklift",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "i18n compiler that generates TypeScript functions from JSON translations",
   "type": "module",
   "main": "./dist/index.js",

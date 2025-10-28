@@ -328,11 +328,14 @@ export function generateRuntimeFile(config: CompilerConfig): string {
     `  return resolvedTranslation?._debugInfo || null;\n` +
     `}\n\n` +
     `/**\n` +
+    ` * Helper type to check if a function parameter is required (non-optional)\n` +
+    ` */\n` +
+    `type IsRequired<T> = undefined extends T ? false : true;\n\n` +
+    `/**\n` +
     ` * Utility type for resolved translations.\n` +
-    ` * Since we cannot determine at compile-time which functions have parameters,\n` +
-    ` * we preserve the original type structure to maintain full type safety.\n` +
-    ` * At runtime, functions without parameters are resolved to strings,\n` +
-    ` * while functions with parameters remain as callable functions.\n` +
+    ` * - Functions with required parameters (interpolation) are preserved as functions\n` +
+    ` * - Functions with only optional parameters are resolved to their return types\n` +
+    ` * - Nested objects and arrays are recursively processed\n` +
     ` *\n` +
     ` * @example\n` +
     ` * import { components_navbar } from './messages/components/navbar/messages';\n` +
@@ -340,15 +343,27 @@ export function generateRuntimeFile(config: CompilerConfig): string {
     ` *\n` +
     ` * type NavbarTranslations = ResolvedTranslations<typeof components_navbar>;\n` +
     ` * const resolved = resolveTranslations(components_navbar);\n` +
-    ` * // All functions are converted to their return types\n` +
+    ` * // Functions without params: resolved to strings\n` +
+    ` * // Functions with params: preserved as functions with proper types\n` +
     ` */\n` +
-    `export type ResolvedTranslations<T> = T extends (...args: any[]) => infer R\n` +
-    `  ? R extends object\n` +
-    `    ? ResolvedTranslations<R>\n` +
-    `    : R\n` +
-    `  : T extends object\n` +
-    `  ? { [K in keyof T]: ResolvedTranslations<T[K]> }\n` +
-    `  : T;\n\n` +
+    `export type ResolvedTranslations<T> = \n` +
+    `  T extends (...args: infer Args) => infer R\n` +
+    `    ? Args extends [infer FirstArg]\n` +
+    `      ? IsRequired<FirstArg> extends true\n` +
+    `        ? T\n` +
+    `        : R extends object\n` +
+    `          ? ResolvedTranslations<R>\n` +
+    `          : R\n` +
+    `      : Args extends []\n` +
+    `        ? R extends object\n` +
+    `          ? ResolvedTranslations<R>\n` +
+    `          : R\n` +
+    `        : R extends object\n` +
+    `          ? ResolvedTranslations<R>\n` +
+    `          : R\n` +
+    `    : T extends object\n` +
+    `      ? { [K in keyof T]: ResolvedTranslations<T[K]> }\n` +
+    `      : T;\n\n` +
     `/**\n` +
     ` * Recursively resolve all translation functions in a namespace object.\n` +
     ` * Converts function references to their resolved string/value equivalents.\n` +
@@ -375,8 +390,22 @@ export function generateRuntimeFile(config: CompilerConfig): string {
     ` */\n` +
     `export function resolveTranslations<T>(obj: T, params?: Record<string, any>): ResolvedTranslations<T> {\n` +
     `  if (typeof obj === 'function') {\n` +
-    `    // Call the function, passing params if provided\n` +
     `    const fn = obj as any as TranslationFunction;\n` +
+    `    \n` +
+    `    // Check if the function has interpolation placeholders (e.g., {name}, {count})\n` +
+    `    // by inspecting the _translations metadata. If placeholders are found,\n` +
+    `    // return the function itself so it can be called with parameters at runtime.\n` +
+    `    const meta = (fn as any)?._translations;\n` +
+    `    const hasPlaceholders = Boolean(\n` +
+    `      meta && Object.values(meta).some((v: any) => typeof v === 'string' && /{[^}]+}/.test(v))\n` +
+    `    );\n` +
+    `    \n` +
+    `    if (hasPlaceholders) {\n` +
+    `      // Return the function itself for parameterized translations\n` +
+    `      return fn as any;\n` +
+    `    }\n` +
+    `    \n` +
+    `    // Safe to call: no interpolation placeholders detected\n` +
     `    const resolvedValue = params ? fn(params) : fn();\n` +
     `    \n` +
     `    // Check if the resolved value is a complex structure (array/object) that needs further resolution\n` +

@@ -1,6 +1,4 @@
-import type { HotForkliftConfig } from "hot-forklift";
-
-const config: HotForkliftConfig = {
+const config = {
   locales: ["en", "es"],
   defaultLocale: "en",
   outputDir: "hot-forklift",

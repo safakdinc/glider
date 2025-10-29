@@ -12,15 +12,30 @@ export interface CompilerConfig extends HotForkliftConfig {
 }
 
 /**
- * Load configuration from hot-forklift.config.ts
+ * Load configuration from hot-forklift.config.ts or hot-forklift.config.js
  */
 export async function loadConfig(overrides?: Partial<HotForkliftConfig>): Promise<CompilerConfig> {
   const cwd = process.cwd();
-  const configPath = path.join(cwd, "hot-forklift.config.ts");
 
-  if (!fs.existsSync(configPath)) {
-    console.error("hot-forklift.config.ts not found in project root!");
-    console.log("Create a hot-forklift.config.ts file in your project root");
+  const configPaths = [
+    path.join(cwd, "hot-forklift.config.ts"),
+    path.join(cwd, "hot-forklift.config.js"),
+    path.join(cwd, "hot-forklift.config.mjs"),
+  ];
+
+  let configPath: string | null = null;
+  for (const p of configPaths) {
+    if (fs.existsSync(p)) {
+      configPath = p;
+      break;
+    }
+  }
+
+  if (!configPath) {
+    console.error("hot-forklift config file not found in project root!");
+    console.log(
+      "Create one of: hot-forklift.config.ts, hot-forklift.config.js, or hot-forklift.config.mjs"
+    );
     process.exit(1);
   }
 
@@ -43,7 +58,7 @@ export async function loadConfig(overrides?: Partial<HotForkliftConfig>): Promis
       generateNamespaces: merged.generateNamespaces ?? true,
     };
   } catch (error: any) {
-    console.error("Failed to load hot-forklift.config.ts:", error.message);
+    console.error(`Failed to load ${path.basename(configPath)}:`, error.message);
     process.exit(1);
   }
 }

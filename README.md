@@ -344,9 +344,6 @@ You can also have arrays as properties within objects, or objects within arrays.
 ## SSR and Framework Integration
 
 Hot Forklift provides utilities specifically designed for SSR frameworks like Astro, where you need to resolve translations at build time and pass them to client components.
-
-> **⚠️ Important Limitation:** The `resolveTranslations` utility **does not support translations with parameter interpolation** (e.g., `{username}`, `{count}`). If your translations use parameters like `"Hello, {name}!"`, you should call those functions directly instead of using `resolveTranslations`. This utility is designed for parameter-free translations that can be fully resolved at build time.
-
 Use the `resolveTranslations` utility to convert translation functions to their string values at build time:
 
 ```typescript
